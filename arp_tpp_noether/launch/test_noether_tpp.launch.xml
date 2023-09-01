@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- ANDI Tool Path Planner Node -->
+    <arg name="line_spacing" default="0.100"/>
+    <arg name="point_spacing" default="0.025"/>
+    <arg name="min_hole_size" default="0.100"/>
+    <arg name="search_radius" default="0.030"/>
+    <arg name="min_segment_size" default="0.010"/>
+    
+    <node pkg="arp_tpp_noether" exec="arp_tpp_noether_node">
+        <param name="line_spacing" value="$(var line_spacing)"/>
+        <param name="point_spacing" value="$(var point_spacing)"/>
+        <param name="min_hole_size" value="$(var min_hole_size)"/>
+        <param name="search_radius" value="$(var search_radius)"/>
+        <param name="min_segment_size" value="$(var min_segment_size)"/>
+    </node>
+
+</launch>

@@ -1,0 +1,17 @@
+# Request
+
+string filename # The name of the ply file to be passed through the path planner
+float64 line_spacing # The spacing in between lines of the raster/snake
+float64 min_hole_size # Minimum gap w/o points!
+float64 min_segment_size # The minimum segment size
+float64 point_spacing # The spacing in between each point in the segment
+float64 search_radius # What area to search in
+
+---
+
+#Response
+
+arp_msgs/ToolPath path # The path broken up into segments as produced by noether!
+
+bool sucess # Did the process succeed?
+string message # External info on success/failiure!
