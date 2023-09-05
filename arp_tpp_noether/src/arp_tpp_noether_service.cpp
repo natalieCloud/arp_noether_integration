@@ -50,6 +50,7 @@
 #include <pcl/Vertices.h>
 
 #include <string>
+#include <stdlib.h>
 
 /////////////////////////////////
 // ROS 2 Node Parameter Retrieval
@@ -68,13 +69,13 @@ T declareAndGet(rclcpp::Node* node, const std::string& key)
   return val;
 }
 
-void declareAndSet(rclcpp::Node* node, const std::string& key, double val){
+double declareAndSet(rclcpp::Node* node, const std::string& key, double val){
     node->declare_parameter(key);
     if(!node->set_parameter(rclcpp::Parameter(key, val)))
     {
         throw std::runtime_error("Failed to set '" + key + "' parameter");
     }
-    return;
+    return val;
 }
 
 
@@ -134,9 +135,11 @@ class TPPNode : public rclcpp::Node
             try {
 
                 // Parameter set!
-
-
-
+				        line_spacing_ = declareAndSet(this, "line_spacing", request->line_spacing);
+				        point_spacing_ = declareAndSet(this, "point_spacing", request->point_spacing);
+				        min_hole_size_ = declareAndSet(this, "min_hole_size", request->min_hole_size);
+				        search_radius_ = declareAndSet(this, "search_radius", request->search_radius);
+				        min_segment_size_ = declareAndSet(this, "min_segment_size", request->min_segment_size);		
 
 
                 // Load file!
@@ -177,25 +180,53 @@ class TPPNode : public rclcpp::Node
                     {
                         RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "TPP Server returning failed. Path generation failed :(");
                     }
+                    
+                    // Report node is COMPLETE
+            	    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Called path planning node!!! :)");
+            	    
+            	    totalPoses.header.frame_id = "world";
+            	    
+            	    for (const auto &path : paths) {
+            	    	for (const auto &segment : path) {
+            	    		geometry_msgs::msg::PoseArray poses = toMsg(segment);
+            	    		for (const auto &pose : poses.poses) {
+            	    			totalPoses.push_back(pose);
+            	    		}
+            	    		response->path.push_back(poses);
+            	    	}
+            	    } 
+                    
+                    response->sucess = true;
+                    response->message = "Sucessfully called path planner!";
+                    
 
                 }
 
+                } catch (const std::exception &ex) {
+                	
+                	// Report node is COMPLETE
+                	RCLCPP_INFO(this->get_logger(), "Failed when calling path planning node! :(");
+                	response->sucess = false;
+                	response->message = ex.what();
                 }
 
-
-            // Report node is COMPLETE
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Called path planning node!!! :)");
+				publishData();
+            
 
             return;
         }
 
         void publishData() {
 
+			      pbsh_->publish(totalPoses);
+
             return;
         }
 
         rclcpp::Service<arp_msgs::srv::GenerateToolPath>::SharedPtr srvr_;
         rclcpp::Publisher<geometry_msgs::srv::PoseArray>::SharedPtr pbsh_;
+        
+        geometry_msgs::msg::PoseArray totalPoses;
 
         const double line_spacing_;
         const double point_spacing_;
@@ -203,12 +234,13 @@ class TPPNode : public rclcpp::Node
         const double min_hole_size_;
         const double search_radius_;
 
-};
+}; // class TPPNode
+
 } // namespace arp_tpp
 
-/////////
-// Main
-/////////
+	//////////
+	// Main //
+	//////////
 
 int main(int argc, char **argv)
 {
@@ -226,5 +258,4 @@ int main(int argc, char **argv)
     rclcpp::shutdown();
     return 0;
 }
-
 
